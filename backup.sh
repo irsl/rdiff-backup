@@ -5,6 +5,10 @@ if [ -z "$DEST" ]; then
    exit 1
 fi
 
+if [ -z "$OPTIONS" ]; then
+   OPTIONS="-v3"
+fi
+
 last_filename=/tmp/last
 
 while :; do
@@ -15,8 +19,10 @@ while :; do
 	 continue
    fi
    
+   echo "$(date -Is) --------------------------------------------- begin"
+   
    echo "$today" > "$last_filename"
-   if rdiff-backup /src/ "$DEST"; then
+   if rdiff-backup $OPTIONS /data/ "$DEST"; then
       # indicate success
 	  status="success"
    else
@@ -30,4 +36,7 @@ while :; do
    fi
    
    rdiff-backup --remove-older-than 4W "$DEST"
+   
+   echo "$(date -Is) --------------------------------------------- ready: $status"
+   echo
 done
