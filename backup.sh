@@ -22,7 +22,7 @@ while :; do
    echo "$(date -Is) --------------------------------------------- begin"
    
    echo "$today" > "$last_filename"
-   if rdiff-backup $OPTIONS /data/ "$DEST"; then
+   if eval "rdiff-backup $OPTIONS /data/ \"$DEST\""; then
       # indicate success
 	  status="success"
    else
@@ -35,7 +35,7 @@ while :; do
 	  mkdir "$BACKUP_INDICATE_DIR"/b-$status-$today
    fi
    
-   rdiff-backup --remove-older-than 4W "$DEST"
+   rdiff-backup --force --remove-older-than 4W "$DEST"
    
    echo "$(date -Is) --------------------------------------------- ready: $status"
    echo
