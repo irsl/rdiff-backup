@@ -22,7 +22,7 @@ while :; do
 		 continue
 	   fi
 
-	   $dir/backup-logic.sh
+	   $dir/backup-logic.sh	   
 	else
 	   echo "RTC mode"
 	   while :; do
@@ -36,7 +36,7 @@ while :; do
 	   $dir/backup-logic.sh
 	   
 	   # seconds until next midnight:
-	   sleep_sec="$(($(date -d "$(date +00:00-24:00)" +%s)-$(date +%s)))"
+	   sleep_sec="$(($(date -d 23:59:59 +%s) - $(date +%s) + 1))"
 	   
 	   # put remote host asleep
 	   ssh "$RTCWAKE_HOST" rtcwake -m mem -s "$sleep_sec" &
