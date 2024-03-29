@@ -9,42 +9,46 @@ if [ -z "$OPTIONS" ]; then
    OPTIONS="-v3"
 fi
 
-last_filename=/tmp/last
+dir="$(dirname $0)"
+
+export last_filename=/tmp/last
 
 while :; do
-   today="$(date -I)"
-   last="$(cat $last_filename)"
-   if [ "$today" = "$last" ]; then
-     sleep 3600
-	 continue
-   fi
-   
-   echo "$(date -Is) --------------------------------------------- begin"
-   
-   echo "$today" > "$last_filename"
-   if eval "rdiff-backup $OPTIONS /data/ \"$DEST\""; then
-      # indicate success
-	  status="success"
-   else
-      # indicate failure
-	  status="FAILURE"
-   fi
+	if [ -z "$RTCWAKE_HOST" ]; then
+	   today="$(date -I)"
+	   last="$(cat $last_filename)"
+	   if [ "$today" = "$last" ]; then
+		 sleep 3600
+		 continue
+	   fi
 
-   if [ -n "$BACKUP_INDICATE_DIR" ]; then
-      rmdir "$BACKUP_INDICATE_DIR"/b-*
-	  mkdir "$BACKUP_INDICATE_DIR"/b-$status-$today
-   fi
-   
-   if [ -n "$BACKUP_FCM_AUTH" ]; then
-		curl -X POST --header "Authorization: key=$BACKUP_FCM_AUTH"     --Header "Content-Type: application/json"     https://fcm.googleapis.com/fcm/send     -d "{\"to\":\"$BACKUP_FCM_TARGET\",\"notification\":{\"title\":\"Geza backup\",\"body\":\"$status $today\"}}"  
-   fi
-
-   if [ -n "$BACKUP_URL_NOTIFICATION" ]; then        
-		curl "$BACKUP_URL_NOTIFICATION$status+$today"
-   fi
-   
-   rdiff-backup --force --remove-older-than 4W "$DEST"
-   
-   echo "$(date -Is) --------------------------------------------- ready: $status"
-   echo
+	   $dir/backup-logic.sh
+	else
+	   echo "RTC mode"
+	   while :; do
+	      if ssh "$RTCWAKE_HOST" id; then
+		    break
+		  fi
+		  sleep 60
+	   done
+	   echo "RTC host is up!"
+	   
+	   $dir/backup-logic.sh
+	   
+	   # seconds until next midnight:
+	   sleep_sec="$(($(date -d "$(date +00:00-24:00)" +%s)-$(date +%s)))"
+	   
+	   # put remote host asleep
+	   ssh "$RTCWAKE_HOST" rtcwake -m mem -s "$sleep_sec" &
+	   # and some local sleep
+	   sleep "$sleep_sec"
+	fi
 done
+
+# while :; do
+# ntpdate
+# iwconfig
+# openvpn
+# ping $LISTEN_PORT
+# sleep mode: https://unix.stackexchange.com/questions/692147/how-can-i-suspendhibernate-for-certain-time
+# done
