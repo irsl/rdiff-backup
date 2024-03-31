@@ -38,8 +38,13 @@ while :; do
 	   # seconds until next midnight:
 	   sleep_sec="$(($(date -d 23:59:59 +%s) - $(date +%s) + 1))"
 	   
-	   # put remote host asleep
-	   ssh "$RTCWAKE_HOST" rtcwake -m mem -s "$sleep_sec" &
+	   if [ ! -f /tmp/do_not_trigger_standby ]; then
+		# put remote host asleep
+		ssh "$RTCWAKE_HOST" rtcwake -m mem -s "$sleep_sec" &
+	   else
+		echo "NOT triggering standby"
+	   fi
+	   
 	   # and some local sleep
 	   sleep "$sleep_sec"
 	fi
